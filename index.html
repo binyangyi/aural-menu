@@ -1,0 +1,162 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>音の献立 / Aural Menu</title>
+    <style>
+        body,
+        html {
+            margin: 0;
+            padding: 0;
+            width: 100%;
+            height: 100%;
+            overflow: hidden;
+            font-family: -apple-system, sans-serif;
+        }
+
+        body {
+            background: linear-gradient(135deg, #FF7B54, #FF4E76, #4A00E0, #240750, #FF7B54);
+            background-size: 800% 800%;
+            color: white;
+            position: relative;
+            animation: animateGradient 40s ease infinite;
+        }
+
+        @keyframes animateGradient {
+            0% {
+                background-position: 0% 50%;
+            }
+
+            50% {
+                background-position: 100% 50%;
+            }
+
+            100% {
+                background-position: 0% 50%;
+            }
+        }
+
+        #particle-canvas {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            z-index: 1;
+        }
+
+        .info-box {
+            position: absolute;
+            bottom: 30px;
+            right: 30px;
+            z-index: 3;
+            transition: opacity 1.5s ease-in-out;
+
+            display: flex;
+
+            flex-direction: column;
+
+            align-items: flex-end;
+        }
+
+        .info-box.hidden {
+            opacity: 0;
+        }
+
+        .info-box h3,
+        .info-box p {
+
+            text-align: right;
+            margin: 0;
+            font-family: -apple-system, YuGothic, "Yu Gothic Medium", "Yu Gothic", "Hiragino Sans", "Noto Sans CJK JP", sans-serif;
+            font-weight: 600;
+            color: rgba(255, 255, 255, 0.9);
+            text-shadow: none;
+        }
+
+        .info-box h3 {
+            font-size: 14px;
+            line-height: 22px;
+            margin-bottom: 4px;
+        }
+
+        .info-box p {
+            font-size: 12px;
+            line-height: 18px;
+        }
+
+        #start-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(135deg, #a8c0ff, #dbe4ff);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            z-index: 10;
+            cursor: pointer;
+            transition: opacity 0.8s ease;
+        }
+
+        #start-overlay h1 {
+            font-family: 'HansenGrotesque', sans-serif;
+            font-weight: 400;
+            font-size: 14px;
+            line-height: 20px;
+            color: #000;
+            letter-spacing: 0.1em;
+            text-transform: uppercase;
+            background: none;
+            padding: 0;
+            border-radius: 0;
+        }
+    </style>
+</head>
+
+<body>
+
+    <canvas id="particle-canvas"></canvas>
+    <div id="start-overlay">
+        <h1>A quiet moment, for you.</h1>
+    </div>
+
+    <div id="info-container" class="info-box">
+        <h3 id="info-title"></h3>
+        <p id="info-text"></p>
+    </div>
+
+    <audio id="audio-player"></audio>
+
+    <script>
+        const audioFiles = ['voice/1.mp3', 'voice/2.mp3', 'voice/3.mp3', 'voice/4.mp3'];
+        const textSets = [
+            { title: "今日の献立", text: "おいしい音がする。" }, { title: "今日の献立", text: "心が、そっと静かになる。" }, { title: "今日の献立", text: "温かい湯気が、見えるよう。" }, { title: "今日の献立", text: "すこし、昔を思い出す音。" }, { title: "今日の献立", text: "この一食に、小さな祝福を。" }, { title: "今日の献立", text: "ひとりの静かな、いい夜。" }, { title: "今日の献立", text: "雨の日の台所。" }, { title: "今日の献立", text: "世界の音を、少しだけオフにして。" }, { title: "今日の献立", text: "「いただきます。」" }, { title: "今日の献立", text: "誰かのための料理。<br>自分のための料理。" }, { title: "今日の献立", text: "耳で味わう、<br>もう一つのおかず。" }, { title: "今日の献立", text: "スプーン一杯の、穏やかさ。" }, { title: "今日の献立", text: "ふと、時間が止まる。" }, { title: "今日の献立", text: "焦らなくていい。<br>ゆっくりで、いい。" }, { title: "今日の献立", text: "今夜の主役は、<br>あなた自身。" }, { title: "今日の献立", text: "記憶の底にある、<br>懐かしい匂い。" }, { title: "今日の献立", text: "何も考えない、という贅沢。" }, { title: "今日の献立", text: "窓の外は、どんな空だろう。" }, { title: "今日の献立", text: "お腹がすくのは、<br>いいことだ。" }, { title: "今日の献立", text: "今日も一日、<br>お疲れ様。" }, { title: "今日の献立", text: "ぐつぐつ、ことこと。<br>ぱちぱち、じゅう。" }, { title: "今日の献立", text: "大切に作られたものは、<br>優しい味がする。" }, { title: "今日の献立", text: "この静けさが、好き。" }, { title: "今日の献立", text: "物語が、<br>聞こえてくる。" }, { title: "今日の献立", text: "自分を、<br>労わる時間。" }, { title: "今日の献立", text: "部屋の灯りと、<br>遠くの街の灯り。" }, { title: "今日の献立", text: "食べることは、祈りに似ている。" }, { title: "今日の献立", text: "音と、光と、<br>温もりと。" }, { title: "今日の献立", text: "さあ、どうぞ。" }, { title: "今日の献立", text: "「ごちそうさまでした。」" }
+        ];
+        const audioPlayer = document.getElementById('audio-player');
+        const startOverlay = document.getElementById('start-overlay');
+        const canvas = document.getElementById('particle-canvas');
+        const ctx = canvas.getContext('2d');
+        const infoContainer = document.getElementById('info-container');
+        const infoTitle = document.getElementById('info-title');
+        const infoText = document.getElementById('info-text');
+        let audioContext, analyser, audioSource, frequencyData;
+        let isAudioContextInitialized = false, textInterval;
+        let particlesArray, currentAudioIndex = -1, currentTextIndex = -1;
+        function updateText() { let nextTextIndex; do { nextTextIndex = Math.floor(Math.random() * textSets.length); } while (textSets.length > 1 && nextTextIndex === currentTextIndex); currentTextIndex = nextTextIndex; infoTitle.innerHTML = textSets[currentTextIndex].title; infoText.innerHTML = textSets[currentTextIndex].text; }
+        function cycleText() { infoContainer.classList.add('hidden'); setTimeout(() => { updateText(); infoContainer.classList.remove('hidden'); }, 1500); }
+        function playRandomAudio() { if (audioFiles.length === 0) return; let nextIndex; do { nextIndex = Math.floor(Math.random() * audioFiles.length); } while (audioFiles.length > 1 && nextIndex === currentAudioIndex); currentAudioIndex = nextIndex; audioPlayer.src = audioFiles[currentAudioIndex]; const playPromise = audioPlayer.play(); if (playPromise !== undefined) { playPromise.catch(error => { console.error(`播放音频失败: ${audioFiles[currentAudioIndex]}`, error); }); } }
+        audioPlayer.addEventListener('ended', playRandomAudio);
+        startOverlay.addEventListener('click', async () => { if (!isAudioContextInitialized) { audioContext = new (window.AudioContext || window.webkitAudioContext)(); analyser = audioContext.createAnalyser(); analyser.fftSize = 256; audioSource = audioContext.createMediaElementSource(audioPlayer); audioSource.connect(analyser); analyser.connect(audioContext.destination); frequencyData = new Uint8Array(analyser.frequencyBinCount); isAudioContextInitialized = true; } if (audioContext.state === 'suspended') { await audioContext.resume(); } startOverlay.style.opacity = '0'; setTimeout(() => { startOverlay.style.display = 'none'; }, 800); updateText(); infoContainer.classList.remove('hidden'); textInterval = setInterval(cycleText, 10000); playRandomAudio(); initParticles(); animateParticles(); }, { once: true });
+        class Particle { constructor() { this.x = Math.random() * canvas.width; this.y = Math.random() * canvas.height; this.baseSize = Math.random() * 1.5 + 0.5; this.size = this.baseSize; this.speedX = (Math.random() - 0.5) * 0.2; this.speedY = (Math.random() - 0.5) * 0.2; } update() { if (this.x > canvas.width || this.x < 0) this.speedX = -this.speedX; if (this.y > canvas.height || this.y < 0) this.speedY = -this.speedY; this.x += this.speedX; this.y += this.speedY; } draw(audioModulation) { ctx.fillStyle = 'rgba(255, 255, 255, 0.85)'; ctx.beginPath(); ctx.arc(this.x, this.y, this.size * audioModulation, 0, Math.PI * 2); ctx.fill(); } }
+        function initParticles() { particlesArray = []; let n = (canvas.height * canvas.width) / 18000; for (let i = 0; i < n; i++) { particlesArray.push(new Particle()); } }
+        function animateParticles() { requestAnimationFrame(animateParticles); ctx.clearRect(0, 0, canvas.width, canvas.height); let audioModulation = 1; if (isAudioContextInitialized) { analyser.getByteFrequencyData(frequencyData); let sum = 0; for (let i = 0; i < frequencyData.length / 2; i++) { sum += frequencyData[i]; } let avg = sum / (frequencyData.length / 2); audioModulation = 1 + (avg / 255) * 1.5; } if (particlesArray) { for (let i = 0; i < particlesArray.length; i++) { particlesArray[i].update(); particlesArray[i].draw(audioModulation); } } }
+        window.addEventListener('resize', () => { canvas.width = window.innerWidth; canvas.height = window.innerHeight; initParticles(); });
+        infoContainer.classList.add('hidden');
+    </script>
+</body>
+
+</html>
